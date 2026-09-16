@@ -6,7 +6,8 @@ Orquestador principal que ejecuta secuencialmente:
 
     1. EXTRACCIÓN  → Lectura de microdatos ECV (DANE) y tablas de referencia
     2. TRANSFORMACIÓN → Limpieza, cálculo de emisiones, modelo estrella
-    3. CARGA → Exportar CSVs + insertar en base de datos
+    3. VALIDACIÓN → Verificación de integridad antes de cargar
+    4. CARGA → Exportar CSVs + insertar en base de datos
 
 Uso:
     python src/main.py
@@ -28,6 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from extract import extraer_datos_ecv, extraer_dimensiones_referencia
 from transform import transformar
+from validate import validar, ValidationError
 from load import cargar
 
 
@@ -58,7 +60,7 @@ def _configurar_logging() -> None:
 # =========================================================================
 
 def ejecutar_pipeline() -> None:
-    """Ejecuta el pipeline ETL completo: Extract → Transform → Load."""
+    """Ejecuta el pipeline ETL completo: Extract → Transform → Validate → Load."""
     _configurar_logging()
     logger = logging.getLogger(__name__)
 
@@ -89,8 +91,14 @@ def ejecutar_pipeline() -> None:
 
         # ── FASE 2: TRANSFORMACIÓN ──────────────────────────────
         t2 = time.time()
+        filas_fuente = len(ecv_data["servicios"])
         tablas = transformar(ecv_data, ref_data)
         logger.info(f"  ⏱  Transformación completada en {time.time() - t2:.1f}s")
+
+        # ── FASE 2.5: VALIDACIÓN ─────────────────────────────────
+        t2b = time.time()
+        validar(tablas, filas_fuente)
+        logger.info(f"  ⏱  Validación completada en {time.time() - t2b:.1f}s")
 
         # ── FASE 3: CARGA ───────────────────────────────────────
         t3 = time.time()
@@ -114,6 +122,13 @@ def ejecutar_pipeline() -> None:
         logger.info(
             "\n💡 Asegúrate de que los microdatos de la ECV estén en "
             "data/raw/"
+        )
+        sys.exit(1)
+
+    except ValidationError as e:
+        logger.error(
+            f"\n❌ VALIDACIÓN FALLIDA — el pipeline se detuvo antes de "
+            f"cargar a la BD:\n   {e}"
         )
         sys.exit(1)
 

@@ -42,13 +42,17 @@ MJ_POR_TJ = 1_000_000           # 1 TJ = 10⁶ MJ
 # ── Consumo estimado de leña para hogares sin dato de gasto ──────────────
 CONSUMO_LENA_KG_MES = 150       # ~5 kg/día (IDEAM, promedio rural)
 
-# ── Mapeo ECV P5030 → id_combustible de dim_combustibles.csv ─────────────
-#    P5030: 1=Electricidad, 2=Gas natural, 3=GLP, 4=Leña,
-#           5=Carbón mineral, 6=Petróleo/kerosén, 9=No cocinan
-MAPA_P5030_A_COMBUSTIBLE = {
-    2: 3,   # Gas natural (ECV=2) → id_combustible=3
-    3: 2,   # GLP/Propano (ECV=3) → id_combustible=2
-    4: 1,   # Leña        (ECV=4) → id_combustible=1
+# ── Mapeo ECV P8536 → id_combustible de dim_combustibles.csv ─────────────
+# Fuente: diccionario oficial DANE ECV 2025, variable P8536
+# https://microdatos.dane.gov.co/index.php/catalog/905/variable/F2/V117
+#    P8536: 1=Electricidad, 2=Gas natural, 3=Petróleo/kerosén/alcohol,
+#           4=GLP/cilindro, 5=Carbón mineral, 6=Leña/madera,
+#           7=Carbón de leña, 8=Material de desecho
+MAPA_P8536_A_COMBUSTIBLE = {
+    2: 3,   # Gas natural            → id_combustible=3
+    4: 2,   # GLP/cilindro            → id_combustible=2
+    6: 1,   # Leña, madera            → id_combustible=1
+    7: 1,   # Carbón de leña (aprox. como leña) → id_combustible=1
 }
 
 # ── Códigos DANE de departamentos de Colombia ────────────────────────────
@@ -68,8 +72,11 @@ DEPARTAMENTOS_COLOMBIA = {
 # ── Columnas candidatas para encontrar el código de departamento ─────────
 COLS_DEPARTAMENTO = ["DEPARTAMENTO", "DPTO", "P1_DEPARTAMENTO", "DEPTO"]
 
-# ── Columnas candidatas para vehículo particular ─────────────────────────
-COLS_VEHICULO = ["P5210S10A1", "P1091S1", "P5250S9A1"]
+# ── Columna real de vehículo particular ──────────────────────────────────
+# Fuente: diccionario oficial DANE ECV 2025, archivo "Condiciones de vida
+# del hogar y tenencia de bienes" — P1077S15 = "13. Carro particular"
+# (1 = Sí tiene, 2 = No tiene)
+COLS_VEHICULO = ["P1077S15"]
 
 
 # =========================================================================
@@ -364,25 +371,27 @@ def _calcular_emisiones(
         df["kwh_consumidos_estimados"] * 12 * factor_electrico
     ).round(4)
 
-    # ── 3. Emisiones por cocción (anuales) ──────────────────────
-    # Asegurar que P5030 exista
-    if "P5030" not in df.columns:
+      # ── 3. Emisiones por cocción (anuales) ──────────────────────
+    # Combustible real: P8536 (no P5030, que es sobre el sanitario).
+    # Gasto real: P3163 (factura de gas natural) y P8540 (GLP/leña/otros).
+    # Fuente: https://microdatos.dane.gov.co/index.php/catalog/905/data-dictionary/F2
+    if "P8536" not in df.columns:
         df["emisiones_coccion_kg"] = 0.0
-        logger.warning("  Columna P5030 no encontrada: emisiones_coccion = 0")
+        logger.warning("  Columna P8536 no encontrada: emisiones_coccion = 0")
     else:
-        df["ID_COMBUSTIBLE"] = df["P5030"].map(MAPA_P5030_A_COMBUSTIBLE)
+        df["ID_COMBUSTIBLE"] = df["P8536"].map(MAPA_P8536_A_COMBUSTIBLE)
 
-        # Obtener gasto mensual según tipo de combustible
-        gasto_gas = df.get("P5046S1A1", pd.Series(0, index=df.index))
-        gasto_glp = df.get("P5067", pd.Series(0, index=df.index))
+        # Gas natural se paga como servicio facturado (P3163);
+        # GLP/leña/carbón se reportan en P8540.
+        gasto_gas = df.get("P3163", pd.Series(0, index=df.index))
+        gasto_otro = df.get("P8540", pd.Series(0, index=df.index))
 
         gasto_gas = pd.to_numeric(gasto_gas, errors="coerce").fillna(0)
-        gasto_glp = pd.to_numeric(gasto_glp, errors="coerce").fillna(0)
+        gasto_otro = pd.to_numeric(gasto_otro, errors="coerce").fillna(0)
 
-        # Calcular consumo físico mensual y emisiones mensuales
         emisiones_mensuales = pd.Series(0.0, index=df.index)
 
-        # Gas Natural (P5030=2 → id_combustible=3)
+        # Gas Natural (P8536=2 → id_combustible=3)
         mask_gas = df["ID_COMBUSTIBLE"] == 3
         if mask_gas.any():
             factor_gas = factor_combustibles.get(3, 56100)
@@ -390,15 +399,15 @@ def _calcular_emisiones(
             tj_mes = m3_mes * NCV_GAS_NATURAL_MJ_M3 / MJ_POR_TJ
             emisiones_mensuales[mask_gas] = tj_mes * factor_gas
 
-        # GLP / Propano (P5030=3 → id_combustible=2)
+        # GLP / Propano (P8536=4 → id_combustible=2)
         mask_glp = df["ID_COMBUSTIBLE"] == 2
         if mask_glp.any():
             factor_glp = factor_combustibles.get(2, 63100)
-            kg_mes = gasto_glp[mask_glp] / PRECIO_GLP_KG
+            kg_mes = gasto_otro[mask_glp] / PRECIO_GLP_KG
             tj_mes = kg_mes * NCV_GLP_MJ_KG / MJ_POR_TJ
             emisiones_mensuales[mask_glp] = tj_mes * factor_glp
 
-        # Leña / Biomasa (P5030=4 → id_combustible=1)
+        # Leña / Carbón de leña (P8536=6,7 → id_combustible=1)
         mask_lena = df["ID_COMBUSTIBLE"] == 1
         if mask_lena.any():
             factor_lena = factor_combustibles.get(1, 112000)
@@ -512,7 +521,7 @@ def transformar(
     factor_electrico = FACTOR_ELECTRICO_DEFAULT
     if "factor_electrico" in ref_data:
         fe = ref_data["factor_electrico"]
-        col_factor = [c for c in fe.columns if "factor" in c.lower()]
+        col_factor = [c for c in fe.columns if "emision" in c.lower()]
         if col_factor:
             factor_electrico = float(fe[col_factor[0]].iloc[0])
     logger.info(f"    Factor eléctrico: {factor_electrico} kg CO₂/kWh")

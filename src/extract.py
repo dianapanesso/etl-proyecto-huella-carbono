@@ -82,7 +82,6 @@ def extraer_datos_ecv() -> dict[str, pd.DataFrame]:
         "servicios":       "Servicios*.csv",
         "datos_vivienda":  "Datos*.csv",
         "caracteristicas": "Caracter*sticas*.csv",   # cubre con/sin tilde
-        "condiciones":     "Condiciones*.csv",
     }
 
     resultado: dict[str, pd.DataFrame] = {}
@@ -99,6 +98,24 @@ def extraer_datos_ecv() -> dict[str, pd.DataFrame]:
             logger.warning(
                 f"  [{nombre}] No se encontró archivo con patrón '{patron}'"
             )
+
+    # ── "condiciones": hay 2 archivos que empiezan igual; usar el
+    # completo (143 variables, con tenencia de bienes) y NO el de
+    # "(programas)" (7 variables, solo subsidios) ─────────────────
+    candidatos_condiciones = glob.glob(os.path.join(RAW_DIR, "Condiciones*.csv"))
+    completos = [c for c in candidatos_condiciones if "programa" not in os.path.basename(c).lower()]
+    ruta_condiciones = completos[0] if completos else (
+        candidatos_condiciones[0] if candidatos_condiciones else None
+    )
+    if ruta_condiciones:
+        df = _leer_csv_auto(ruta_condiciones)
+        logger.info(
+            f"  [condiciones] {df.shape[0]:,} filas × {df.shape[1]} columnas "
+            f"({os.path.basename(ruta_condiciones)})"
+        )
+        resultado["condiciones"] = df
+    else:
+        logger.warning("  [condiciones] No se encontró ningún archivo 'Condiciones*.csv'")
 
     if not resultado:
         raise FileNotFoundError(
