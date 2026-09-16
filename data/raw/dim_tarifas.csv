@@ -1,0 +1,7 @@
+﻿Estrato;% de Subsidio o Contribución;Rango de Aplicación;Costo Estimado Promedio ($/kWh)
+Estrato 1;60% de subsidio;Solo en el Consumo de Subsistencia;460
+Estrato 2;50% de subsidio;Solo en el Consumo de Subsistencia;570
+Estrato 3;15% de subsidio;Solo en el Consumo de Subsistencia;970
+Estrato 4;Tarifa Plena (0%);Todo el consumo (es igual al CU);1.150
+Estrato 5;20% de contribución;Todo el consumo (financian los subsidios);1.380
+Estrato 6;20% de contribución;Todo el consumo (financian los subsidios);1.380
