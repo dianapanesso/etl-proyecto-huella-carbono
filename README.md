@@ -40,10 +40,10 @@ The project aligns directly with SDG 12 targets by providing visibility into hou
 * **Granularity Declaration:** *"A row in the Fact Table represents the estimated annual measurement of the carbon footprint for a specific Colombian household, uniquely identified by the survey control variables (DIRECTORIO and SECUENCIA_P)."*
 * **Star Schema Diagram:**  
   ![Star Schema Diagram](docs/star_schema.png)
-
-## 7. System Architecture
-General flow of the analytical solution from raw data to BI consumption:  
-*(Pending to attach the `architecture.png` image in the `docs/` folder)*
+  
+## 7. System Architecture (ETL Pipeline)
+* **Architecture Flow Diagram:**
+  ![System Architecture](docs/architecture.png)
 
 ## 8. ETL Pipeline and Data Warehouse
 * **Technologies:** Python (Pandas/SQLAlchemy), PostgreSQL / MySQL.
