@@ -39,7 +39,7 @@ The project aligns directly with SDG 12 targets by providing visibility into hou
 ## 6. Granularity Declaration and Dimensional Model (Star Schema)
 * **Granularity Declaration:** *"A row in the Fact Table represents the estimated annual measurement of the carbon footprint for a specific Colombian household, uniquely identified by the survey control variables (DIRECTORIO and SECUENCIA_P)."*
 * **Star Schema Diagram:**  
-  *(Pending to attach the `star_schema.png` image in the `docs/` folder)*
+  ![Star Schema Diagram](docs/star_schema.png)
 
 ## 7. System Architecture
 General flow of the analytical solution from raw data to BI consumption:  
