@@ -1,0 +1,12 @@
+# Ignorar microdatos pesados de la ECV
+data/raw/Características*.csv
+data/raw/Condiciones*.csv
+data/raw/Datos*.csv
+data/raw/Servicios*.csv
+data/processed/*.csv
+
+# Ignorar entornos virtuales y caché de Python
+__pycache__/
+.venv/
+env/
+.env

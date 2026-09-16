@@ -1,0 +1,4 @@
+﻿id_combustible;tipo_combustible;factor_emision_co2;unidad_medida;observaciones_inventario
+1;Leña (Biomasa);112000;Terajulio (TJ);No suma al total neto de $CO_2$ (carbono neutro). Sí contabiliza $CH_4$ y $N_2O$.
+2;Propano / GLP;63100;Terajulio (TJ);Se suma por completo (fuente fósil).
+3;Gas Natural;56100;Terajulio (TJ);Se suma por completo (combustible fósil de menor tasa).
