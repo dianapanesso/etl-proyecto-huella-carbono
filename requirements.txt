@@ -1,0 +1,8 @@
+pandas>=2.0
+numpy>=1.24
+sqlalchemy>=2.0
+python-dotenv>=1.0
+
+# Drivers de base de datos (instalar según el motor elegido):
+pymysql>=1.1          # MySQL
+# psycopg2-binary>=2.9  # PostgreSQL (descomentar si se usa PostgreSQL)
