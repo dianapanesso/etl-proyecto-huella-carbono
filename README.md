@@ -143,23 +143,23 @@ Based on the profiling findings above, the following cleaning rules were impleme
 ## 12. Analytical Queries (SQL) and KPIs
 The formal queries solving R1-R5 against the Data Warehouse are in [`sql/analytical_queries.sql`](sql/analytical_queries.sql).
 
-| Requirement | Metric / KPI | Main Result |
-|---|---|---|
-| R1 | Avg. annual electric footprint by stratum | *(PENDING — Persona 4 to run and report)* |
-| R2 | Total/avg. cooking emissions by department & fuel | *(PENDING — Persona 4 to run and report)* |
-| R3 | Vehicle ownership rate & avg. footprint by ownership | 8,312 households (9.6%) own a private car; 78,536 (90.4%) do not *(avg. footprint comparison pending)* |
-| R4 | Per-capita footprint ranking by department | *(PENDING — Persona 4 to run and report)* |
-| R5 | Per-capita footprint by household size | *(PENDING — Persona 4 to run and report)* |
+| Requirement | Metric / KPI | DW Tables Used | Main Result |
+|---|---|---|---|
+| R1 | Avg. monthly kWh & annual CO₂ by stratum | fact_huella_carbono, dim_ubicacion | Consumption/emissions decrease from stratum 1-2 (highest, ~137-139 kWh/month) to stratum 6 (lowest, ~94 kWh/month) |
+| R2 | Total/avg. cooking emissions by department & fuel | fact_huella_carbono, dim_ubicacion, dim_combustibles | Firewood emits ~3x more per household (3,145 kg/year) than LPG/natural gas; La Guajira leads in total firewood-related emissions (1,242 households) |
+| R3 | Avg. total footprint by vehicle ownership | fact_huella_carbono, dim_hogar | Households WITHOUT a private car show a higher footprint (1,232 kg) than those with one (1,030 kg) — likely confounded by rurality and cooking-fuel type, not the vehicle itself (further analysis pending) |
+| R4 | Per-capita footprint ranking by department | fact_huella_carbono, dim_ubicacion, dim_hogar | Vichada, Guainía, Amazonas and Vaupés (Orinoquía-Amazonía) lead in per-capita footprint (620-740 kg), consistent with lower natural-gas grid coverage |
+| R5 | Per-capita footprint by household size | fact_huella_carbono, dim_hogar | Per-capita footprint drops from 1,000 kg (1-person households) to ~243 kg (8-person households) — clear household economies of scale |
 
 > **Mandatory source:** all analytical queries were run directly against the MySQL Data Warehouse, not against the raw source files.
 
 ## 13. Business Intelligence (BI) and Analytical Findings
 * **Visualization:** Interactive dashboard connected to the Data Warehouse.  
   *(PENDING — dashboard.png not yet attached to docs/)*
-* **Key Findings:**  
-  1. *(PENDING — Persona 4, after dashboard execution)*
-  2. *(PENDING)*
-  3. *(PENDING)*
+* **Key Findings:**
+  1. **Cooking fuel type is the single biggest driver of household emissions, not electricity.** Households cooking with firewood emit roughly 3x more annually (~3,145 kg CO₂) than those using LPG or piped natural gas. This directly answers R2 and suggests firewood-to-gas substitution programs (already piloted by the Colombian government in rural areas) would have a larger emissions-reduction impact than electricity-efficiency campaigns.
+  2. **The four departments with the highest per-capita residential footprint (Vichada, Guainía, Amazonas, Vaupés) are exactly the departments with the least natural-gas grid coverage**, per R4. This is relevant for Colombia because it points to energy-infrastructure investment, not household behavior change, as the most effective lever for reducing emissions in these regions — supporting resource-allocation decisions for the Ministry of Environment and DNP.
+  3. **Per-capita footprint falls sharply as household size grows** (from 1,000 kg for single-person households to ~243 kg for 8-person households), per R5. This supports environmental-education and housing-policy arguments in favor of shared/denser housing as an emissions-reduction lever, since larger households achieve clear economies of scale in energy and cooking-fuel use.
 
 ## 14. Team Members and Responsibilities
 | Name | Role |

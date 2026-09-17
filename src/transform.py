@@ -323,15 +323,9 @@ def _construir_dim_tarifas(ref_tarifas: pd.DataFrame) -> pd.DataFrame:
         dim[col_estrato].astype(str).str.extract(r"(\d+)").astype(int)
     )
 
-    # Columna de costo → manejar separador de miles colombiano ("1.150" → 1150)
+    # Columna de costo — ya viene en dígitos simples, sin separador de miles
     col_costo = [c for c in dim.columns if "Costo" in c or "costo" in c][0]
-    dim["costo_promedio_kwh"] = (
-        dim[col_costo]
-        .astype(str)
-        .str.replace(".", "", regex=False)
-        .str.replace(",", ".", regex=False)
-        .astype(float)
-    )
+    dim["costo_promedio_kwh"] = pd.to_numeric(dim[col_costo], errors="coerce")
 
     dim.insert(0, "sk_tarifa", range(1, len(dim) + 1))
     return dim[["sk_tarifa", "estrato_aplica", "costo_promedio_kwh"]]
